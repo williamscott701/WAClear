@@ -1,0 +1,76 @@
+{
+  "identifier" : "WAClear Premium",
+  "nonRenewingSubscriptions" : [
+
+  ],
+  "products" : [
+
+  ],
+  "settings" : {
+    "_applicationInternalID" : "com.waclear.app",
+    "_developerTeamID" : "",
+    "_storeKitErrors" : [
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Load Products"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Purchase"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "Verification"
+      },
+      {
+        "current" : null,
+        "enabled" : false,
+        "name" : "App Store Sync"
+      }
+    ]
+  },
+  "subscriptionGroups" : [
+    {
+      "id" : "WAClearPremiumGroup",
+      "localizations" : [
+
+      ],
+      "name" : "WAClear Premium",
+      "subscriptions" : [
+        {
+          "adHocOffers" : [
+
+          ],
+          "displayPrice" : "99.00",
+          "familyShareable" : false,
+          "groupNumber" : 1,
+          "internalID" : "monthly_premium",
+          "introductoryOffer" : null,
+          "localizations" : [
+            {
+              "description" : "Crystal-clear WhatsApp status videos with no watermark",
+              "displayName" : "WAClear Premium",
+              "locale" : "en_US"
+            },
+            {
+              "description" : "वॉटरमार्क के बिना WhatsApp स्टेटस वीडियो",
+              "displayName" : "WAClear प्रीमियम",
+              "locale" : "hi"
+            }
+          ],
+          "productID" : "com.waclear.premium.monthly",
+          "recurringSubscriptionPeriod" : "P1M",
+          "referenceName" : "Monthly Premium",
+          "type" : "RecurringSubscription"
+        }
+      ]
+    }
+  ],
+  "version" : {
+    "major" : 2,
+    "minor" : 0
+  }
+}

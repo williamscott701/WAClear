@@ -1,17 +1,16 @@
-//
-//  WAClearApp.swift
-//  WAClear
-//
-//  Created by Willam Scott on 06/04/26.
-//
-
 import SwiftUI
 
 @main
 struct WAClearApp: App {
+    @StateObject private var storeManager = StoreManager()
+
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .environmentObject(storeManager)
+                .task {
+                    await storeManager.checkCurrentEntitlements()
+                }
         }
     }
 }
