@@ -36,23 +36,30 @@ final class VideoProcessor: @unchecked Sendable {
     func process(
         project: VideoProject,
         settings: ConversionSettings,
+        excludedChunks: Set<Int> = [],
         onProgress: @Sendable @escaping (ProcessingProgress) -> Void
     ) async throws -> [ChunkResult] {
         lock.withLock { _cancelled = false }
 
-        let watermarkRenderer: WatermarkRenderer? = settings.addWatermark ? WatermarkRenderer() : nil
-        watermarkRenderer?.prepare(targetWidth: settings.targetWidth, targetHeight: settings.targetHeight)
+        // Dynamically choose portrait vs landscape target resolution based on source
+        let effectiveSettings = Self.resolvedSettings(settings, for: project)
 
-        let totalChunks = project.chunkCount(chunkDuration: settings.chunkDuration)
+        let watermarkRenderer: WatermarkRenderer? = effectiveSettings.addWatermark ? WatermarkRenderer() : nil
+        watermarkRenderer?.prepare(targetWidth: effectiveSettings.targetWidth, targetHeight: effectiveSettings.targetHeight)
+
+        let totalChunksInVideo = project.chunkCount(chunkDuration: effectiveSettings.chunkDuration)
+        let selectedIndices = (0..<totalChunksInVideo).filter { !excludedChunks.contains($0) }
+        let totalToProcess = selectedIndices.count
+
         var results: [ChunkResult] = []
         var writtenURLs: [URL] = []
 
         do {
-            for index in 0..<totalChunks {
+            for (progressIndex, index) in selectedIndices.enumerated() {
                 if isCancelled { throw VideoError.cancelled }
 
-                let startTime = Double(index) * settings.chunkDuration
-                let endTime = min(startTime + settings.chunkDuration, project.duration)
+                let startTime = Double(index) * effectiveSettings.chunkDuration
+                let endTime = min(startTime + effectiveSettings.chunkDuration, project.duration)
                 let chunkDuration = endTime - startTime
 
                 let outputURL = URL.tempFileURL(prefix: "waclear_chunk")
@@ -60,13 +67,13 @@ final class VideoProcessor: @unchecked Sendable {
 
                 try await processChunk(
                     project: project,
-                    settings: settings,
+                    settings: effectiveSettings,
                     startTime: startTime,
                     chunkDuration: chunkDuration,
                     outputURL: outputURL,
                     watermarkRenderer: watermarkRenderer,
-                    chunkIndex: index,
-                    totalChunks: totalChunks,
+                    chunkIndex: progressIndex,
+                    totalChunks: totalToProcess,
                     onProgress: onProgress
                 )
 
@@ -74,7 +81,7 @@ final class VideoProcessor: @unchecked Sendable {
                 results.append(ChunkResult(
                     outputURL: outputURL,
                     chunkIndex: index,
-                    totalChunks: totalChunks,
+                    totalChunks: totalChunksInVideo,
                     duration: chunkDuration,
                     fileSizeBytes: fileSize
                 ))
@@ -148,7 +155,8 @@ final class VideoProcessor: @unchecked Sendable {
             AVVideoAverageBitRateKey: settings.videoBitrate,
             AVVideoProfileLevelKey: AVVideoProfileLevelH264HighAutoLevel,
             AVVideoMaxKeyFrameIntervalKey: settings.maxKeyframeInterval,
-            AVVideoExpectedSourceFrameRateKey: settings.frameRate
+            AVVideoExpectedSourceFrameRateKey: settings.frameRate,
+            AVVideoH264EntropyModeKey: AVVideoH264EntropyModeCABAC
         ]
 
         let videoInputSettings: [String: Any] = [
@@ -332,6 +340,21 @@ final class VideoProcessor: @unchecked Sendable {
                 }
             }
         }
+    }
+
+    // MARK: - Orientation-aware settings
+
+    /// Swaps width/height when the source video is landscape so we output 1280×720 instead of 720×1280.
+    private static func resolvedSettings(_ settings: ConversionSettings, for project: VideoProject) -> ConversionSettings {
+        let isPortrait = project.isPortrait
+        var resolved = settings
+        let w = settings.targetWidth
+        let h = settings.targetHeight
+        let shorter = min(w, h)
+        let longer  = max(w, h)
+        resolved.targetWidth  = isPortrait ? shorter : longer
+        resolved.targetHeight = isPortrait ? longer  : shorter
+        return resolved
     }
 
     // MARK: - ChunkPipeline

@@ -3,15 +3,17 @@ import CoreGraphics
 
 enum Constants {
     enum Video {
-        static let targetWidth = 960
-        static let targetHeight = 1704
-        static let videoBitrate = 1_800_000
-        static let audioBitrate = 128_000
+        // Portrait defaults — VideoProcessor overrides these dynamically per source orientation.
+        // Targeting 720p keeps us well under WhatsApp's 16 MB / 30s limit while preserving HD clarity.
+        static let targetWidth = 720
+        static let targetHeight = 1280
+        static let videoBitrate = 1_200_000   // 1.2 Mbps: minimises double-compression artefacts
+        static let audioBitrate = 96_000
         static let audioSampleRate: Double = 44100
         static let audioChannels = 2
         static let frameRate: Double = 30
-        static let maxKeyframeInterval = 60
-        static let chunkDuration: Double = 60.0
+        static let maxKeyframeInterval = 30   // 1-second GOPs for better seek & WhatsApp compat
+        static let chunkDuration: Double = 30.0  // WhatsApp Status hard cap is 30 s
     }
 
     enum StoreKit {

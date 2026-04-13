@@ -99,7 +99,7 @@ struct HomeView: View {
                     .foregroundStyle(LinearGradient(colors: [purple, blue], startPoint: .leading, endPoint: .trailing))
             } else {
                 // Full hero on empty state
-                VStack(spacing: 12) {
+                VStack(spacing: 16) {
                     Text("WAClear")
                         .font(.system(size: 36, weight: .black))
                         .foregroundStyle(LinearGradient(colors: [purple, blue], startPoint: .leading, endPoint: .trailing))
@@ -109,14 +109,48 @@ struct HomeView: View {
                         .multilineTextAlignment(.center)
                         .foregroundStyle(.white)
 
-                    Text("Convert any video into WhatsApp-ready 1-minute status chunks at optimal quality.")
+                    Text("Convert any video into WhatsApp-ready status clips at optimal quality — no blur, no quality loss.")
                         .font(.system(size: 15))
                         .multilineTextAlignment(.center)
                         .foregroundStyle(.white.opacity(0.6))
                         .padding(.horizontal, 32)
+
+                    marketingBadges
+                        .padding(.top, 4)
                 }
             }
         }
+    }
+
+    // MARK: - Marketing Badges
+
+    private var marketingBadges: some View {
+        VStack(spacing: 10) {
+            HStack(spacing: 8) {
+                marketingBadge(icon: "sparkles", label: "HD Quality", color: purple)
+                marketingBadge(icon: "logo.whatsapp", label: "WhatsApp Optimized", color: Color(red: 0.07, green: 0.63, blue: 0.22))
+            }
+            HStack(spacing: 8) {
+                marketingBadge(icon: "scissors", label: "Auto-Split 30s", color: blue)
+                marketingBadge(icon: "lock.open.fill", label: "No Blur", color: Color(red: 0.95, green: 0.65, blue: 0.05))
+            }
+        }
+    }
+
+    private func marketingBadge(icon: String, label: String, color: Color) -> some View {
+        HStack(spacing: 6) {
+            Image(systemName: icon)
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(color)
+            Text(label)
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(.white.opacity(0.75))
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 8)
+        .background(color.opacity(0.1))
+        .clipShape(Capsule())
+        .overlay(Capsule().stroke(color.opacity(0.25), lineWidth: 1))
     }
 
     // MARK: - Select Button
@@ -135,12 +169,11 @@ struct HomeView: View {
         .clipShape(RoundedRectangle(cornerRadius: Constants.UI.cornerRadius))
     }
 
-    // MARK: - Action Area (Start / Loading+Cancel)
+    // MARK: - Action Area (Start / Analyzing)
 
     @ViewBuilder
     private var actionArea: some View {
         if viewModel.isPreparingFile {
-            // Inline loading row — no full-screen block
             VStack(spacing: 10) {
                 HStack(spacing: 12) {
                     ProgressView()
@@ -148,10 +181,10 @@ struct HomeView: View {
                         .tint(.white)
 
                     VStack(alignment: .leading, spacing: 2) {
-                        Text("Loading video…")
+                        Text("Analyzing video…")
                             .font(.system(size: 15, weight: .semibold))
                             .foregroundStyle(.white)
-                        Text("Exporting from your library")
+                        Text("Almost ready")
                             .font(.system(size: 12))
                             .foregroundStyle(.white.opacity(0.45))
                     }
@@ -176,11 +209,11 @@ struct HomeView: View {
                     RoundedRectangle(cornerRadius: Constants.UI.cornerRadius)
                         .stroke(Color.white.opacity(0.1), lineWidth: 1)
                 )
-                // Indeterminate shimmer bar
                 indeterminateBar
             }
         } else {
             let blocked = !storeManager.canProcess
+            let isLoadingFile = viewModel.isLoadingFile
 
             Button {
                 if blocked {
@@ -190,9 +223,16 @@ struct HomeView: View {
                 }
             } label: {
                 HStack(spacing: 10) {
-                    Image(systemName: blocked ? "lock.fill" : "bolt.fill")
-                        .font(.system(size: 17, weight: .semibold))
-                    Text(blocked ? "Subscribe to Continue" : "Start Processing")
+                    if isLoadingFile && !blocked {
+                        ProgressView()
+                            .progressViewStyle(.circular)
+                            .tint(.white)
+                            .scaleEffect(0.8)
+                    } else {
+                        Image(systemName: blocked ? "lock.fill" : "bolt.fill")
+                            .font(.system(size: 17, weight: .semibold))
+                    }
+                    Text(blocked ? "Subscribe to Continue" : (isLoadingFile ? "Loading…" : "Start Processing"))
                         .font(.system(size: 17, weight: .bold))
                 }
                 .foregroundStyle(.white)
@@ -356,7 +396,7 @@ struct HomeView: View {
             Spacer()
 
             HStack(spacing: 4) {
-                ForEach([30.0, 60.0], id: \.self) { duration in
+                ForEach([15.0, 30.0, 60.0], id: \.self) { duration in
                     let selected = viewModel.splitDuration == duration
                     Button {
                         withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {

@@ -29,8 +29,9 @@ final class HomeViewModel: ObservableObject {
     @Published var selectedItem: PhotosPickerItem?
     @Published var videoPreview: VideoPreviewInfo?
     @Published var thumbnail: UIImage?
-    @Published var splitDuration: Double = 60
-    @Published var isPreparingFile = false
+    @Published var splitDuration: Double = 30
+    @Published var isPreparingFile = false   // true only during the brief VideoAnalyzer step
+    @Published var isLoadingFile = false     // true while video file is being exported in background
     @Published var errorMessage: String?
     @Published var navigateTo: HomeNavigation?
 
@@ -39,13 +40,18 @@ final class HomeViewModel: ObservableObject {
     }
 
     private var loadingTask: Task<Void, Never>?
+    private var eagerLoadTask: Task<Void, Never>?
+    private(set) var loadedVideoURL: URL?
 
-    // MARK: - Selection (instant — PHAsset metadata + thumbnail, no file export)
+    // MARK: - Selection (instant metadata + thumbnail, then eager file export)
 
     func handlePickedItem(_ item: PhotosPickerItem?) async {
         guard let item else { return }
         videoPreview = nil
         thumbnail = nil
+        loadedVideoURL = nil
+        eagerLoadTask?.cancel()
+        eagerLoadTask = nil
 
         if let identifier = item.itemIdentifier {
             let result = PHAsset.fetchAssets(withLocalIdentifiers: [identifier], options: nil)
@@ -57,18 +63,20 @@ final class HomeViewModel: ObservableObject {
                     pendingItem: item
                 )
                 loadThumbnail(from: asset)
+                startEagerLoad(item: item)
                 return
             }
         }
 
-        // Fallback: no PHAsset access — show card without stats or thumbnail
+        // Fallback: no PHAsset access — show card without stats, still kick off eager load
         videoPreview = VideoPreviewInfo(duration: 0, pixelWidth: 0, pixelHeight: 0, pendingItem: item)
+        startEagerLoad(item: item)
     }
 
     private func loadThumbnail(from asset: PHAsset) {
         let options = PHImageRequestOptions()
         options.isNetworkAccessAllowed = true
-        options.deliveryMode = .opportunistic   // show low-res preview immediately, upgrade later
+        options.deliveryMode = .opportunistic
         options.resizeMode = .fast
 
         PHImageManager.default().requestImage(
@@ -84,7 +92,28 @@ final class HomeViewModel: ObservableObject {
         }
     }
 
-    // MARK: - Start (non-blocking, cancellable)
+    private func startEagerLoad(item: PhotosPickerItem) {
+        isLoadingFile = true
+        eagerLoadTask = Task {
+            do {
+                guard let transferred = try await item.loadTransferable(type: VideoTransferable.self) else {
+                    await MainActor.run { self.isLoadingFile = false }
+                    return
+                }
+                try Task.checkCancellation()
+                await MainActor.run {
+                    self.loadedVideoURL = transferred.url
+                    self.isLoadingFile = false
+                }
+            } catch is CancellationError {
+                await MainActor.run { self.isLoadingFile = false }
+            } catch {
+                await MainActor.run { self.isLoadingFile = false }
+            }
+        }
+    }
+
+    // MARK: - Start (non-blocking, uses pre-loaded URL if available)
 
     func startProcessing() {
         guard let preview = videoPreview, !isPreparingFile else { return }
@@ -93,11 +122,19 @@ final class HomeViewModel: ObservableObject {
             isPreparingFile = true
 
             do {
-                guard let url = try await preview.pendingItem
-                    .loadTransferable(type: VideoTransferable.self)?.url else {
-                    isPreparingFile = false
-                    errorMessage = "Could not load the video file."
-                    return
+                let url: URL
+                if let preloaded = loadedVideoURL {
+                    url = preloaded
+                } else {
+                    // Eager load may still be in progress — wait for it
+                    guard let transferred = try await preview.pendingItem
+                        .loadTransferable(type: VideoTransferable.self) else {
+                        isPreparingFile = false
+                        errorMessage = "Could not load the video file."
+                        return
+                    }
+                    url = transferred.url
+                    loadedVideoURL = url
                 }
 
                 try Task.checkCancellation()
@@ -128,9 +165,13 @@ final class HomeViewModel: ObservableObject {
 
     func clearSelectedVideo() {
         cancelLoading()
+        eagerLoadTask?.cancel()
+        eagerLoadTask = nil
         videoPreview = nil
         thumbnail = nil
         selectedItem = nil
+        loadedVideoURL = nil
+        isLoadingFile = false
     }
 
     func clearError() {

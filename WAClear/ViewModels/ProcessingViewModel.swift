@@ -46,6 +46,7 @@ final class ProcessingViewModel: ObservableObject {
     func startProcessing(
         project: VideoProject,
         settings: ConversionSettings,
+        excludedChunks: Set<Int> = [],
         onSuccess: @escaping @MainActor () -> Void = {}
     ) {
         guard !isProcessing else { return }
@@ -54,22 +55,25 @@ final class ProcessingViewModel: ObservableObject {
         results = []
         errorMessage = nil
 
-        // Build initial per-chunk states using the actual split duration from settings
-        let totalChunks = project.chunkCount(chunkDuration: settings.chunkDuration)
-        chunkStates = (0..<totalChunks).map { index in
-            let start = Double(index) * settings.chunkDuration
+        let totalChunksInVideo = project.chunkCount(chunkDuration: settings.chunkDuration)
+        let selectedIndices = (0..<totalChunksInVideo).filter { !excludedChunks.contains($0) }
+
+        // Build per-chunk states only for selected chunks (keeping original index for labeling)
+        chunkStates = selectedIndices.enumerated().map { progressIndex, originalIndex in
+            let start = Double(originalIndex) * settings.chunkDuration
             let end = min(start + settings.chunkDuration, project.duration)
             return ChunkProgressState(
-                id: index,
+                id: progressIndex,
                 startTime: start,
                 endTime: end,
                 progress: 0,
-                status: index == 0 ? .processing : .pending,
+                status: progressIndex == 0 ? .processing : .pending,
                 thumbnail: nil
             )
         }
 
-        progress = ProcessingProgress(currentChunk: 1, totalChunks: totalChunks, chunkProgress: 0)
+        let totalToProcess = selectedIndices.count
+        progress = ProcessingProgress(currentChunk: 1, totalChunks: totalToProcess, chunkProgress: 0)
 
         // Generate thumbnails from source video in the background
         Task { await generateThumbnails(sourceURL: project.sourceURL) }
@@ -79,6 +83,7 @@ final class ProcessingViewModel: ObservableObject {
                 let chunks = try await processor.process(
                     project: project,
                     settings: settings,
+                    excludedChunks: excludedChunks,
                     onProgress: { [weak self] prog in
                         Task { @MainActor [weak self] in
                             guard let self else { return }
