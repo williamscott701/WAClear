@@ -42,7 +42,9 @@ struct HomeView: View {
                             .transition(.opacity)
                         }
 
-                        trialStatusBanner
+                        if !storeManager.isPremium {
+                            upgradeBanner
+                        }
 
                         Spacer(minLength: 40)
                     }
@@ -67,7 +69,7 @@ struct HomeView: View {
             .sheet(isPresented: $showSubscription) {
                 SubscriptionView()
             }
-            .onAppear { storeManager.refreshTrialStatus() }
+            .onAppear { Task { await storeManager.checkCurrentEntitlements() } }
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button { viewModel.showSettings = true } label: {
@@ -212,38 +214,26 @@ struct HomeView: View {
                 indeterminateBar
             }
         } else {
-            let blocked = !storeManager.canProcess
             let isLoadingFile = viewModel.isLoadingFile
 
-            Button {
-                if blocked {
-                    showSubscription = true
-                } else {
-                    viewModel.startProcessing()
-                }
-            } label: {
+            Button { viewModel.startProcessing() } label: {
                 HStack(spacing: 10) {
-                    if isLoadingFile && !blocked {
+                    if isLoadingFile {
                         ProgressView()
                             .progressViewStyle(.circular)
                             .tint(.white)
                             .scaleEffect(0.8)
                     } else {
-                        Image(systemName: blocked ? "lock.fill" : "bolt.fill")
+                        Image(systemName: "bolt.fill")
                             .font(.system(size: 17, weight: .semibold))
                     }
-                    Text(blocked ? "Subscribe to Continue" : (isLoadingFile ? "Loading…" : "Start Processing"))
+                    Text(isLoadingFile ? "Loading…" : "Start Processing")
                         .font(.system(size: 17, weight: .bold))
                 }
                 .foregroundStyle(.white)
                 .frame(maxWidth: .infinity)
                 .frame(height: 56)
-                .background(
-                    blocked
-                        ? LinearGradient(colors: [Color.white.opacity(0.15), Color.white.opacity(0.1)],
-                                         startPoint: .leading, endPoint: .trailing)
-                        : LinearGradient(colors: [purple, blue], startPoint: .leading, endPoint: .trailing)
-                )
+                .background(LinearGradient(colors: [purple, blue], startPoint: .leading, endPoint: .trailing))
                 .clipShape(RoundedRectangle(cornerRadius: Constants.UI.cornerRadius))
             }
         }
@@ -441,68 +431,21 @@ struct HomeView: View {
             .frame(width: 1, height: 44)
     }
 
-    // MARK: - Trial Status Banner
+    // MARK: - Upgrade Banner (shown to non-premium users)
 
-    @ViewBuilder
-    private var trialStatusBanner: some View {
-        switch storeManager.trialStatus {
-        case .premium:
-            EmptyView()
-
-        case .active(let daysRemaining, let processingsLeft):
-            trialBanner(
-                icon: "clock.badge.checkmark",
-                iconColor: blue,
-                title: daysRemaining == 1
-                    ? "Last day of free trial"
-                    : "\(daysRemaining) days left in free trial",
-                subtitle: "\(processingsLeft) of \(Constants.Trial.dailyProcessingLimit) processings remaining today",
-                borderColors: [blue, purple],
-                action: nil
-            )
-
-        case .dailyLimitReached(let daysRemaining):
-            trialBanner(
-                icon: "moon.zzz.fill",
-                iconColor: Color(red: 1.0, green: 0.75, blue: 0.0),
-                title: "Daily limit reached",
-                subtitle: "Come back tomorrow · \(daysRemaining) trial day\(daysRemaining == 1 ? "" : "s") remaining",
-                borderColors: [Color(red: 1.0, green: 0.75, blue: 0.0), purple],
-                action: nil
-            )
-
-        case .expired:
-            trialBanner(
-                icon: "crown.fill",
-                iconColor: purple,
-                title: "Free trial ended · Go Premium",
-                subtitle: "Unlimited conversions, no restrictions",
-                borderColors: [purple, blue],
-                action: { showSubscription = true }
-            )
-        }
-    }
-
-    private func trialBanner(
-        icon: String,
-        iconColor: Color,
-        title: String,
-        subtitle: String,
-        borderColors: [Color],
-        action: (() -> Void)?
-    ) -> some View {
-        Button {
-            if let action { action() } else { showSubscription = true }
-        } label: {
+    private var upgradeBanner: some View {
+        Button { showSubscription = true } label: {
             HStack(spacing: 12) {
-                Image(systemName: icon)
+                Image(systemName: "crown.fill")
                     .font(.system(size: 18, weight: .semibold))
-                    .foregroundStyle(iconColor)
+                    .foregroundStyle(purple)
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(title)
+                    Text(storeManager.isEligibleForTrial ? "Try Premium Free for 3 Days" : "Go Premium")
                         .font(.system(size: 14, weight: .bold))
                         .foregroundStyle(.white)
-                    Text(subtitle)
+                    Text(storeManager.isEligibleForTrial
+                         ? "No watermark · Unlimited conversions"
+                         : "Remove watermark · Unlimited conversions")
                         .font(.system(size: 12))
                         .foregroundStyle(.white.opacity(0.65))
                 }
@@ -518,7 +461,7 @@ struct HomeView: View {
             .overlay(
                 RoundedRectangle(cornerRadius: Constants.UI.cornerRadius)
                     .stroke(
-                        LinearGradient(colors: borderColors, startPoint: .leading, endPoint: .trailing),
+                        LinearGradient(colors: [purple, blue], startPoint: .leading, endPoint: .trailing),
                         lineWidth: 1
                     )
             )

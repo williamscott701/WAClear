@@ -14,7 +14,7 @@ struct OnboardingView: View {
             iconBg: Color(red: 0.58, green: 0.20, blue: 1.0),
             title: "Crystal Clear Quality",
             subtitle: "No more blurry status updates",
-            description: "WAClear encodes your videos at the exact specifications WhatsApp needs — so your Status looks sharp every time.",
+            description: "WAClear makes sure your videos look sharp on WhatsApp Status — exactly the way you recorded them.",
             badge: nil
         ),
         OnboardingPage(
@@ -22,23 +22,23 @@ struct OnboardingView: View {
             iconBg: Color(red: 0.07, green: 0.63, blue: 0.22),
             title: "WhatsApp Optimized",
             subtitle: "Built to beat the blur",
-            description: "We pre-compress at 720p with H.264 + AAC at the right bitrate. When WhatsApp re-compresses, the result stays HD.",
-            badge: "720p · H.264 · AAC"
+            description: "We compress your videos the smart way — small enough for WhatsApp, clear enough to impress.",
+            badge: nil
         ),
         OnboardingPage(
             icon: "scissors",
             iconBg: Color(red: 0.20, green: 0.50, blue: 1.0),
-            title: "Auto-Split Into 30s Parts",
+            title: "Auto-Split for Status",
             subtitle: "Perfect for Status limits",
-            description: "WhatsApp Status videos max out at 30 seconds. WAClear automatically splits long videos into share-ready chunks.",
-            badge: "≤ 30s per part · ≤ 16 MB"
+            description: "Long videos are automatically split into ready-to-post clips. Just pick which parts you want to share.",
+            badge: nil
         ),
         OnboardingPage(
             icon: "square.and.arrow.up.fill",
             iconBg: Color(red: 0.90, green: 0.45, blue: 0.10),
             title: "3 Steps to Perfect Status",
             subtitle: "Select · Configure · Share",
-            description: "Pick a video, choose which parts to include, then share directly to WhatsApp. Done in under a minute.",
+            description: "Pick a video, choose your clips, then share directly to WhatsApp. Done in under a minute.",
             badge: nil
         )
     ]

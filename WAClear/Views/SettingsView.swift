@@ -65,7 +65,7 @@ struct SettingsView: View {
                                 .foregroundStyle(.white.opacity(0.5))
                         }
 
-                        Link(destination: URL(string: "mailto:support@waclear.app")!) {
+                        Link(destination: URL(string: "mailto:williamscott701@gmail.com")!) {
                             HStack {
                                 Image(systemName: "envelope")
                                     .foregroundStyle(.white.opacity(0.7))

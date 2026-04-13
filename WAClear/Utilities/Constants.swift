@@ -20,13 +20,6 @@ enum Constants {
         static let monthlyProductID = "com.waclear.premium.monthly"
     }
 
-    enum Trial {
-        /// Calendar days the free trial lasts.
-        static let durationDays = 3
-        /// Max processings allowed per calendar day during the trial.
-        static let dailyProcessingLimit = 3
-    }
-
     enum UI {
         static let cornerRadius: CGFloat = 16
         static let cardCornerRadius: CGFloat = 12

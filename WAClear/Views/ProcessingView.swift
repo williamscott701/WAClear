@@ -280,9 +280,7 @@ struct ProcessingView: View {
             project: project,
             settings: settings,
             excludedChunks: excludedChunks
-        ) {
-            storeManager.recordProcessingUsed()
-        }
+        )
     }
 
     private func loadChunkThumbnails() async {

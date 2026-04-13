@@ -48,7 +48,13 @@
           "familyShareable" : false,
           "groupNumber" : 1,
           "internalID" : "monthly_premium",
-          "introductoryOffer" : null,
+          "introductoryOffer" : {
+            "displayPrice" : "0.00",
+            "internalID" : "free_trial_3_days",
+            "paymentMode" : "FreeTrial",
+            "subscriptionPeriod" : "P3D",
+            "type" : "introductory"
+          },
           "localizations" : [
             {
               "description" : "Crystal-clear WhatsApp status videos with no watermark",

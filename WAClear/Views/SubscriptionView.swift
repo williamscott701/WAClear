@@ -6,14 +6,16 @@ struct SubscriptionView: View {
     @Environment(\.dismiss) private var dismiss
 
     private let bgColor = Color(red: 0.04, green: 0.04, blue: 0.06)
+    private let purple  = Color(red: 0.58, green: 0.20, blue: 1.0)
+    private let blue    = Color(red: 0.20, green: 0.50, blue: 1.0)
 
     private let features: [(String, String)] = [
-        ("infinity", "Unlimited conversions every day"),
-        ("video.badge.checkmark", "No daily processing cap"),
-        ("arrow.up.circle", "Crystal-clear 960×1704 quality"),
-        ("waveform", "AAC 128kbps audio"),
-        ("bolt.fill", "Fast, on-device processing"),
-        ("lock.open.fill", "Keep access forever while subscribed")
+        ("infinity",             "Unlimited conversions every day"),
+        ("video.badge.checkmark","No watermark on your videos"),
+        ("arrow.up.circle",      "HD video quality — no blur"),
+        ("waveform",             "Crystal-clear audio"),
+        ("bolt.fill",            "Fast, private, on-device processing"),
+        ("lock.open.fill",       "Access as long as you're subscribed")
     ]
 
     var body: some View {
@@ -35,16 +37,10 @@ struct SubscriptionView: View {
 
                 ScrollView {
                     VStack(spacing: 28) {
-                        // Hero
                         heroSection
-
-                        // Feature list
                         featureList
-
-                        // Price & purchase
                         purchaseSection
 
-                        // Restore link
                         Button("Restore Purchase") {
                             Task { await storeManager.restorePurchases() }
                         }
@@ -76,7 +72,7 @@ struct SubscriptionView: View {
                 Circle()
                     .fill(
                         LinearGradient(
-                            colors: [Color(red: 0.58, green: 0.20, blue: 1.0), Color(red: 0.85, green: 0.25, blue: 0.60)],
+                            colors: [purple, Color(red: 0.85, green: 0.25, blue: 0.60)],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
                         )
@@ -87,13 +83,13 @@ struct SubscriptionView: View {
                     .foregroundStyle(.white)
             }
 
-            Text(storeManager.trialStatus == .expired ? "Trial Ended" : "Go Premium")
+            Text(storeManager.isEligibleForTrial ? "Try Free for 3 Days" : "Go Premium")
                 .font(.system(size: 32, weight: .black))
                 .foregroundStyle(.white)
 
-            Text(storeManager.trialStatus == .expired
-                 ? "Your 3-day free trial has ended.\nSubscribe to keep converting videos."
-                 : "Unlimited daily conversions,\nno restrictions — ever.")
+            Text(storeManager.isEligibleForTrial
+                 ? "Start your free trial today.\nNo charge for the first 3 days."
+                 : "Unlock unlimited, watermark-free\nconversions at any time.")
                 .font(.system(size: 15))
                 .multilineTextAlignment(.center)
                 .foregroundStyle(.white.opacity(0.6))
@@ -104,11 +100,11 @@ struct SubscriptionView: View {
 
     private var featureList: some View {
         VStack(spacing: 14) {
-            ForEach(features, id: \.0) { (icon, text) in
+            ForEach(features, id: \.0) { icon, text in
                 HStack(spacing: 14) {
                     Image(systemName: icon)
                         .font(.system(size: 16, weight: .semibold))
-                        .foregroundStyle(Color(red: 0.58, green: 0.20, blue: 1.0))
+                        .foregroundStyle(purple)
                         .frame(width: 32)
                     Text(text)
                         .font(.system(size: 15))
@@ -125,19 +121,31 @@ struct SubscriptionView: View {
     private var purchaseSection: some View {
         VStack(spacing: 14) {
             // Price card
-            VStack(spacing: 4) {
-                if let product = storeManager.product {
-                    Text(product.displayPrice)
-                        .font(.system(size: 40, weight: .black))
+            VStack(spacing: 6) {
+                if storeManager.isEligibleForTrial {
+                    Text("Free for 3 days")
+                        .font(.system(size: 26, weight: .black))
                         .foregroundStyle(.white)
-                    Text("per month • cancel anytime")
-                        .font(.system(size: 13))
-                        .foregroundStyle(.white.opacity(0.5))
+                    if let product = storeManager.product {
+                        Text("then \(product.displayPrice)/month · cancel anytime")
+                            .font(.system(size: 13))
+                            .foregroundStyle(.white.opacity(0.5))
+                    } else {
+                        Text("then ₹99/month · cancel anytime")
+                            .font(.system(size: 13))
+                            .foregroundStyle(.white.opacity(0.5))
+                    }
                 } else {
-                    Text("₹99")
-                        .font(.system(size: 40, weight: .black))
-                        .foregroundStyle(.white)
-                    Text("per month • cancel anytime")
+                    if let product = storeManager.product {
+                        Text(product.displayPrice)
+                            .font(.system(size: 40, weight: .black))
+                            .foregroundStyle(.white)
+                    } else {
+                        Text("₹99")
+                            .font(.system(size: 40, weight: .black))
+                            .foregroundStyle(.white)
+                    }
+                    Text("per month · cancel anytime")
                         .font(.system(size: 13))
                         .foregroundStyle(.white.opacity(0.5))
                 }
@@ -149,13 +157,22 @@ struct SubscriptionView: View {
             .padding(.horizontal, 24)
 
             GradientButton(
-                storeManager.isLoading ? "Processing…" : "Subscribe Now",
+                storeManager.isLoading
+                    ? "Processing…"
+                    : (storeManager.isEligibleForTrial ? "Start Free Trial" : "Subscribe Now"),
                 systemImage: storeManager.isLoading ? nil : "crown.fill"
             ) {
                 await storeManager.purchase()
             }
             .disabled(storeManager.isLoading)
             .padding(.horizontal, 24)
+
+            Text("You won't be charged during the free trial.\nCancel anytime from your Apple ID settings.")
+                .font(.system(size: 11))
+                .multilineTextAlignment(.center)
+                .foregroundStyle(.white.opacity(0.3))
+                .padding(.horizontal, 36)
+                .opacity(storeManager.isEligibleForTrial ? 1 : 0)
         }
     }
 }
