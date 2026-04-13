@@ -17,8 +17,8 @@ struct SubscriptionView: View {
     private let gold    = Color(red: 0.98, green: 0.75, blue: 0.10)
 
     private let features: [(String, String)] = [
-        ("sparkles",             "WhatsApp won't re-compress your videos"),
-        ("eye.fill",             "Sharp, clear quality — exactly as you shot it"),
+        ("sparkles",             "Crystal clear videos on WhatsApp Status"),
+        ("eye.fill",             "Your viewers see exactly what you recorded"),
         ("video.badge.checkmark","No watermark — clean videos every time"),
         ("scissors",             "Auto-split into WhatsApp Status clips"),
         ("bolt.fill",            "Unlimited conversions, on-device & private"),
