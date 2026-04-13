@@ -98,12 +98,12 @@ struct HomeView: View {
                         .font(.system(size: 36, weight: .black))
                         .foregroundStyle(LinearGradient(colors: [purple, blue], startPoint: .leading, endPoint: .trailing))
 
-                    Text("Crystal Clear\nWhatsApp Status")
+                    Text("Post WhatsApp Status\nin Full Quality")
                         .font(.system(size: 28, weight: .bold))
                         .multilineTextAlignment(.center)
                         .foregroundStyle(.white)
 
-                    Text("Convert any video into WhatsApp-ready status clips at optimal quality — no blur, no quality loss.")
+                    Text("WhatsApp re-compresses every video you post, turning it blurry. WAClear pre-optimizes your video so WhatsApp has nothing left to compress.")
                         .font(.system(size: 15))
                         .multilineTextAlignment(.center)
                         .foregroundStyle(.white.opacity(0.6))
@@ -121,12 +121,12 @@ struct HomeView: View {
     private var marketingBadges: some View {
         VStack(spacing: 10) {
             HStack(spacing: 8) {
-                marketingBadge(icon: "sparkles", label: "HD Quality", color: purple)
-                marketingBadge(icon: "logo.whatsapp", label: "WhatsApp Optimized", color: Color(red: 0.07, green: 0.63, blue: 0.22))
+                marketingBadge(icon: "sparkles", label: "Beats WA Compression", color: purple)
+                marketingBadge(icon: "logo.whatsapp", label: "WA Optimized", color: Color(red: 0.07, green: 0.63, blue: 0.22))
             }
             HStack(spacing: 8) {
-                marketingBadge(icon: "scissors", label: "Auto-Split 30s", color: blue)
-                marketingBadge(icon: "lock.open.fill", label: "No Blur", color: Color(red: 0.95, green: 0.65, blue: 0.05))
+                marketingBadge(icon: "scissors", label: "Auto-Split for Status", color: blue)
+                marketingBadge(icon: "eye.fill", label: "Sharp & Clear", color: Color(red: 0.95, green: 0.65, blue: 0.05))
             }
         }
     }

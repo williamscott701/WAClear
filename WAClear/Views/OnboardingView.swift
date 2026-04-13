@@ -10,35 +10,35 @@ struct OnboardingView: View {
 
     private let pages: [OnboardingPage] = [
         OnboardingPage(
-            icon: "sparkles",
+            icon: "eye.slash.fill",
             iconBg: Color(red: 0.58, green: 0.20, blue: 1.0),
-            title: "Crystal Clear Quality",
-            subtitle: "No more blurry status updates",
-            description: "WAClear makes sure your videos look sharp on WhatsApp Status — exactly the way you recorded them.",
+            title: "WhatsApp Ruins Your Videos",
+            subtitle: "Every. Single. Time.",
+            description: "When you post a video on WhatsApp Status, WhatsApp re-compresses it — making it blurry, pixelated, and unwatchable. Your HD memory becomes a muddy mess.",
             badge: nil
         ),
         OnboardingPage(
-            icon: "logo.whatsapp",
+            icon: "sparkles",
             iconBg: Color(red: 0.07, green: 0.63, blue: 0.22),
-            title: "WhatsApp Optimized",
-            subtitle: "Built to beat the blur",
-            description: "We compress your videos the smart way — small enough for WhatsApp, clear enough to impress.",
+            title: "WAClear Fixes That",
+            subtitle: "Nothing left for WhatsApp to ruin",
+            description: "WAClear pre-optimizes your video exactly the way WhatsApp expects. By the time it reaches WhatsApp, there's nothing left to compress — so the quality stays sharp.",
             badge: nil
         ),
         OnboardingPage(
             icon: "scissors",
             iconBg: Color(red: 0.20, green: 0.50, blue: 1.0),
             title: "Auto-Split for Status",
-            subtitle: "Perfect for Status limits",
-            description: "Long videos are automatically split into ready-to-post clips. Just pick which parts you want to share.",
+            subtitle: "Long video? No problem.",
+            description: "WhatsApp Status only allows 30-second clips. WAClear automatically splits your video into perfectly-sized parts — just pick the ones you want to share.",
             badge: nil
         ),
         OnboardingPage(
             icon: "square.and.arrow.up.fill",
             iconBg: Color(red: 0.90, green: 0.45, blue: 0.10),
             title: "3 Steps to Perfect Status",
-            subtitle: "Select · Configure · Share",
-            description: "Pick a video, choose your clips, then share directly to WhatsApp. Done in under a minute.",
+            subtitle: "Select · Choose clips · Share",
+            description: "Pick a video, choose which clips to post, then share directly to WhatsApp. Your viewers will see exactly what you intended — sharp and clear.",
             badge: nil
         )
     ]

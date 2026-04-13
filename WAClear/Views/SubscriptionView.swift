@@ -17,12 +17,12 @@ struct SubscriptionView: View {
     private let gold    = Color(red: 0.98, green: 0.75, blue: 0.10)
 
     private let features: [(String, String)] = [
-        ("infinity",             "Unlimited conversions every day"),
-        ("video.badge.checkmark","No watermark on your videos"),
-        ("arrow.up.circle",      "HD video quality — no blur"),
-        ("waveform",             "Crystal-clear audio"),
-        ("bolt.fill",            "Fast, private, on-device processing"),
-        ("lock.open.fill",       "Access as long as you're subscribed")
+        ("sparkles",             "WhatsApp won't re-compress your videos"),
+        ("eye.fill",             "Sharp, clear quality — exactly as you shot it"),
+        ("video.badge.checkmark","No watermark — clean videos every time"),
+        ("scissors",             "Auto-split into WhatsApp Status clips"),
+        ("bolt.fill",            "Unlimited conversions, on-device & private"),
+        ("infinity",             "Post as many statuses as you want")
     ]
 
     var body: some View {
@@ -106,8 +106,8 @@ struct SubscriptionView: View {
                 .foregroundStyle(.white)
 
             Text(storeManager.isEligibleForTrial
-                 ? "Start your free trial today.\nNo charge for the first 3 days."
-                 : "Unlock unlimited, watermark-free\nconversions at any time.")
+                 ? "Stop WhatsApp from blurring your videos.\nNo charge for the first 3 days."
+                 : "Stop WhatsApp from blurring your videos.\nPost every Status in full quality.")
                 .font(.system(size: 15))
                 .multilineTextAlignment(.center)
                 .foregroundStyle(.white.opacity(0.6))

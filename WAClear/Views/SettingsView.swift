@@ -36,8 +36,11 @@ struct SettingsView: View {
                                     VStack(alignment: .leading, spacing: 2) {
                                         Text("Go Premium")
                                             .foregroundStyle(.white)
+                                        Text("Post WhatsApp Status without the blur")
+                                            .font(.caption)
+                                            .foregroundStyle(.white.opacity(0.5))
                                         if storeManager.isEligibleForTrial {
-                                            Text("3 days free trial — then from ₹99/month")
+                                            Text("3 days free — no charge until trial ends")
                                                 .font(.caption)
                                                 .foregroundStyle(Color(red: 0.98, green: 0.75, blue: 0.10))
                                         }
