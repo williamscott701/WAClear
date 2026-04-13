@@ -90,6 +90,17 @@ struct SubscriptionView: View {
                     .foregroundStyle(.white)
             }
 
+            // Trial badge — always visible so users know a free trial is available
+            if storeManager.isEligibleForTrial {
+                Text("3 DAYS FREE TRIAL")
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundStyle(.black)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 5)
+                    .background(gold)
+                    .clipShape(Capsule())
+            }
+
             Text(storeManager.isEligibleForTrial ? "Try Free for 3 Days" : "Go Premium")
                 .font(.system(size: 32, weight: .black))
                 .foregroundStyle(.white)

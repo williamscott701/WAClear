@@ -28,13 +28,20 @@ struct SettingsView: View {
                             }
                         } else {
                             NavigationLink {
-                                SubscriptionView()
+                                SubscriptionView(allowDismiss: true)
                             } label: {
-                                HStack {
+                                HStack(spacing: 12) {
                                     Image(systemName: "crown")
                                         .foregroundStyle(Color(red: 0.58, green: 0.20, blue: 1.0))
-                                    Text("Go Premium")
-                                        .foregroundStyle(.white)
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text("Go Premium")
+                                            .foregroundStyle(.white)
+                                        if storeManager.isEligibleForTrial {
+                                            Text("3 days free trial — then from ₹99/month")
+                                                .font(.caption)
+                                                .foregroundStyle(Color(red: 0.98, green: 0.75, blue: 0.10))
+                                        }
+                                    }
                                 }
                             }
                         }
