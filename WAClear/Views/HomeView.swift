@@ -35,7 +35,7 @@ struct HomeView: View {
                             ) {
                                 selectButtonLabel
                             }
-                            .onChange(of: viewModel.selectedItem) { _, item in
+                            .onChange(of: viewModel.selectedItem) { item in
                                 Task { await viewModel.handlePickedItem(item) }
                             }
                             .padding(.horizontal, 24)
@@ -50,10 +50,15 @@ struct HomeView: View {
                     .animation(.spring(response: 0.45, dampingFraction: 0.8), value: viewModel.videoPreview != nil)
                 }
             }
-            .navigationDestination(item: $viewModel.navigateTo) { destination in
-                switch destination {
-                case .processing(let project, let splitDuration):
-                    ProcessingView(project: project, splitDuration: splitDuration)
+            .navigationDestination(isPresented: Binding(
+                get: { viewModel.navigateTo != nil },
+                set: { if !$0 { viewModel.navigateTo = nil } }
+            )) {
+                if let destination = viewModel.navigateTo {
+                    switch destination {
+                    case .processing(let project, let splitDuration):
+                        ProcessingView(project: project, splitDuration: splitDuration)
+                    }
                 }
             }
             .sheet(isPresented: $viewModel.showSettings) {
@@ -63,9 +68,6 @@ struct HomeView: View {
                 SubscriptionView()
             }
             .onAppear { storeManager.refreshTrialStatus() }
-            .onChange(of: storeManager.trialStatus) { _, _ in
-                // Re-check gating whenever status changes (e.g. midnight reset)
-            }
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button { viewModel.showSettings = true } label: {
@@ -267,7 +269,7 @@ struct HomeView: View {
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 12)
             }
-            .onChange(of: viewModel.selectedItem) { _, item in
+            .onChange(of: viewModel.selectedItem) { item in
                 Task { await viewModel.handlePickedItem(item) }
             }
         }

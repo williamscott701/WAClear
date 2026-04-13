@@ -43,7 +43,11 @@ final class ProcessingViewModel: ObservableObject {
 
     // MARK: - Start
 
-    func startProcessing(project: VideoProject, settings: ConversionSettings) {
+    func startProcessing(
+        project: VideoProject,
+        settings: ConversionSettings,
+        onSuccess: @escaping @MainActor () -> Void = {}
+    ) {
         guard !isProcessing else { return }
         isProcessing = true
         processingComplete = false
@@ -111,6 +115,7 @@ final class ProcessingViewModel: ObservableObject {
                 results = chunks
                 isProcessing = false
                 processingComplete = true
+                onSuccess()
 
             } catch VideoError.cancelled {
                 isProcessing = false
@@ -150,5 +155,6 @@ final class ProcessingViewModel: ObservableObject {
         processingTask?.cancel()
         processingTask = nil
         isProcessing = false
+        FileManager.default.removeTempFiles(prefix: "waclear_chunk")
     }
 }

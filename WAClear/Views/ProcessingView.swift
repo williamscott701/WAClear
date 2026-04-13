@@ -73,13 +73,12 @@ struct ProcessingView: View {
             Text(viewModel.errorMessage ?? "")
         }
         .onAppear {
-            // Record one processing toward the daily trial limit
-            storeManager.recordProcessingUsed()
-
             var settings = ConversionSettings.default
-            settings.addWatermark = false   // No watermark in trial or premium
+            settings.addWatermark = !storeManager.isPremium
             settings.chunkDuration = splitDuration
-            viewModel.startProcessing(project: project, settings: settings)
+            viewModel.startProcessing(project: project, settings: settings) {
+                storeManager.recordProcessingUsed()
+            }
         }
         .preferredColorScheme(.dark)
     }
@@ -111,7 +110,7 @@ struct ProcessingView: View {
                         .frame(height: 6)
                     Capsule()
                         .fill(LinearGradient(colors: [purple, blue], startPoint: .leading, endPoint: .trailing))
-                        .frame(width: geo.size.width * viewModel.overallProgress, height: 6)
+                        .frame(width: max(0, geo.size.width * viewModel.overallProgress), height: 6)
                         .animation(.easeInOut(duration: 0.4), value: viewModel.overallProgress)
                 }
             }
@@ -180,7 +179,7 @@ private struct ChunkProgressRow: View {
 
                         Capsule()
                             .fill(barFill)
-                            .frame(width: geo.size.width * chunk.progress, height: 5)
+                            .frame(width: max(0, geo.size.width * chunk.progress), height: 5)
                             .animation(.easeInOut(duration: 0.3), value: chunk.progress)
                     }
                 }

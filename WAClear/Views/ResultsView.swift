@@ -1,4 +1,5 @@
 import SwiftUI
+import AVFoundation
 
 struct ResultsView: View {
     let chunks: [ChunkResult]
@@ -146,6 +147,7 @@ private struct ChunkRow: View {
     let onRemoveWatermark: () -> Void
 
     @State private var isSaving = false
+    @State private var thumbnail: UIImage?
 
     private let purple = Color(red: 0.58, green: 0.20, blue: 1.0)
     private let blue   = Color(red: 0.20, green: 0.50, blue: 1.0)
@@ -153,21 +155,28 @@ private struct ChunkRow: View {
 
     var body: some View {
         HStack(spacing: 14) {
-            // Thumbnail placeholder
-            RoundedRectangle(cornerRadius: 8)
-                .fill(
+            // Thumbnail
+            Group {
+                if let thumbnail {
+                    Image(uiImage: thumbnail)
+                        .resizable()
+                        .scaledToFill()
+                } else {
                     LinearGradient(
                         colors: [purple.opacity(0.25), blue.opacity(0.25)],
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
                     )
-                )
-                .frame(width: 52, height: 88)
-                .overlay {
-                    Image(systemName: "video.fill")
-                        .font(.system(size: 18))
-                        .foregroundStyle(.white.opacity(0.35))
+                    .overlay {
+                        Image(systemName: "video.fill")
+                            .font(.system(size: 18))
+                            .foregroundStyle(.white.opacity(0.35))
+                    }
                 }
+            }
+            .frame(width: 52, height: 88)
+            .clipShape(RoundedRectangle(cornerRadius: 8))
+            .task { await loadThumbnail() }
 
             // Info
             VStack(alignment: .leading, spacing: 6) {
@@ -252,6 +261,19 @@ private struct ChunkRow: View {
             RoundedRectangle(cornerRadius: 14)
                 .stroke(Color.white.opacity(0.08), lineWidth: 1)
         )
+    }
+
+    private func loadThumbnail() async {
+        let asset = AVURLAsset(url: chunk.outputURL)
+        let gen = AVAssetImageGenerator(asset: asset)
+        gen.appliesPreferredTrackTransform = true
+        gen.maximumSize = CGSize(width: 104, height: 176)
+        gen.requestedTimeToleranceBefore = CMTime(seconds: 1, preferredTimescale: 600)
+        gen.requestedTimeToleranceAfter  = CMTime(seconds: 1, preferredTimescale: 600)
+        let time = CMTime(seconds: min(1.0, chunk.duration / 2), preferredTimescale: 600)
+        if let cgImage = try? await gen.image(at: time).image {
+            thumbnail = UIImage(cgImage: cgImage)
+        }
     }
 
     private func actionButtonLabel(icon: String, label: String, color: Color, bg: Color) -> some View {

@@ -159,7 +159,8 @@ final class StoreManager: ObservableObject {
                     purchaseError = "Purchase verification failed."
                 }
             case .userCancelled: break
-            case .pending:       break
+            case .pending:
+                purchaseError = "Your purchase is pending approval. Check your payment method in Settings."
             @unknown default:    break
             }
         } catch {

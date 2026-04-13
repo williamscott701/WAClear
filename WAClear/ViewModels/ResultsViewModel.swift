@@ -20,6 +20,7 @@ final class ResultsViewModel: ObservableObject {
     // MARK: - Save All to Photos
 
     func saveAllToPhotos() async {
+        guard await requestPhotoLibraryAccess() else { return }
         isSaving = true
         defer { isSaving = false }
 
@@ -29,6 +30,7 @@ final class ResultsViewModel: ObservableObject {
                 try await PHPhotoLibrary.shared().performChanges {
                     PHAssetChangeRequest.creationRequestForAssetFromVideo(atFileURL: chunk.outputURL)
                 }
+                savedChunkURLs.insert(chunk.outputURL)
                 savedCount += 1
             } catch {
                 saveMessage = "Failed to save chunk \(chunk.partNumber): \(error.localizedDescription)"
@@ -42,6 +44,7 @@ final class ResultsViewModel: ObservableObject {
 
     func saveChunk(_ chunk: ChunkResult) async {
         guard !savedChunkURLs.contains(chunk.outputURL) else { return }
+        guard await requestPhotoLibraryAccess() else { return }
         do {
             try await PHPhotoLibrary.shared().performChanges {
                 PHAssetChangeRequest.creationRequestForAssetFromVideo(atFileURL: chunk.outputURL)
@@ -49,6 +52,24 @@ final class ResultsViewModel: ObservableObject {
             savedChunkURLs.insert(chunk.outputURL)
         } catch {
             saveMessage = "Failed to save Part \(chunk.partNumber): \(error.localizedDescription)"
+        }
+    }
+
+    // MARK: - Photos Authorization
+
+    private func requestPhotoLibraryAccess() async -> Bool {
+        let status = PHPhotoLibrary.authorizationStatus(for: .addOnly)
+        switch status {
+        case .authorized, .limited:
+            return true
+        case .notDetermined:
+            let granted = await PHPhotoLibrary.requestAuthorization(for: .addOnly)
+            if granted == .authorized || granted == .limited { return true }
+            saveMessage = "Please allow Photos access in Settings to save videos."
+            return false
+        default:
+            saveMessage = "Photos access is denied. Enable it in Settings > Privacy > Photos."
+            return false
         }
     }
 

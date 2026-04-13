@@ -12,7 +12,6 @@ enum Constants {
         static let frameRate: Double = 30
         static let maxKeyframeInterval = 60
         static let chunkDuration: Double = 60.0
-        static let maxFileSizeBytes = 16 * 1024 * 1024
     }
 
     enum StoreKit {

@@ -45,36 +45,45 @@ final class VideoProcessor: @unchecked Sendable {
 
         let totalChunks = project.chunkCount(chunkDuration: settings.chunkDuration)
         var results: [ChunkResult] = []
+        var writtenURLs: [URL] = []
 
-        for index in 0..<totalChunks {
-            if isCancelled { throw VideoError.cancelled }
+        do {
+            for index in 0..<totalChunks {
+                if isCancelled { throw VideoError.cancelled }
 
-            let startTime = Double(index) * settings.chunkDuration
-            let endTime = min(startTime + settings.chunkDuration, project.duration)
-            let chunkDuration = endTime - startTime
+                let startTime = Double(index) * settings.chunkDuration
+                let endTime = min(startTime + settings.chunkDuration, project.duration)
+                let chunkDuration = endTime - startTime
 
-            let outputURL = URL.tempFileURL(prefix: "waclear_chunk")
+                let outputURL = URL.tempFileURL(prefix: "waclear_chunk")
+                writtenURLs.append(outputURL)
 
-            try await processChunk(
-                project: project,
-                settings: settings,
-                startTime: startTime,
-                chunkDuration: chunkDuration,
-                outputURL: outputURL,
-                watermarkRenderer: watermarkRenderer,
-                chunkIndex: index,
-                totalChunks: totalChunks,
-                onProgress: onProgress
-            )
+                try await processChunk(
+                    project: project,
+                    settings: settings,
+                    startTime: startTime,
+                    chunkDuration: chunkDuration,
+                    outputURL: outputURL,
+                    watermarkRenderer: watermarkRenderer,
+                    chunkIndex: index,
+                    totalChunks: totalChunks,
+                    onProgress: onProgress
+                )
 
-            let fileSize = outputURL.fileSizeBytes
-            results.append(ChunkResult(
-                outputURL: outputURL,
-                chunkIndex: index,
-                totalChunks: totalChunks,
-                duration: chunkDuration,
-                fileSizeBytes: fileSize
-            ))
+                let fileSize = outputURL.fileSizeBytes
+                results.append(ChunkResult(
+                    outputURL: outputURL,
+                    chunkIndex: index,
+                    totalChunks: totalChunks,
+                    duration: chunkDuration,
+                    fileSizeBytes: fileSize
+                ))
+            }
+        } catch {
+            for url in writtenURLs {
+                try? FileManager.default.removeItem(at: url)
+            }
+            throw error
         }
 
         return results
@@ -192,7 +201,20 @@ final class VideoProcessor: @unchecked Sendable {
         writer.startSession(atSourceTime: .zero)
 
         let ciContext = CIContext(options: [.workingColorSpace: CGColorSpaceCreateDeviceRGB()])
-        let pool = pixelBufferAdaptor.pixelBufferPool
+
+        // Bundle all non-Sendable AVFoundation objects into a single @unchecked Sendable
+        // container so the @Sendable closures passed to requestMediaDataWhenReady capture
+        // only one value instead of seven individually-flagged non-Sendable types.
+        let pipeline = ChunkPipeline(
+            reader: reader,
+            writer: writer,
+            videoInput: videoInput,
+            videoOutput: videoOutput,
+            pixelBufferAdaptor: pixelBufferAdaptor,
+            pool: pixelBufferAdaptor.pixelBufferPool,
+            audioInput: audioInput,
+            audioOutput: audioOutput
+        )
 
         // Capture needed values for closures
         let targetWidth = settings.targetWidth
@@ -206,7 +228,7 @@ final class VideoProcessor: @unchecked Sendable {
             let audioQueue = DispatchQueue(label: "com.waclear.audio", qos: .userInitiated)
 
             var videoFinished = false
-            var audioFinished = audioOutput == nil
+            var audioFinished = pipeline.audioOutput == nil
             var resumedContinuation = false
             let finishLock = NSLock()
 
@@ -214,8 +236,8 @@ final class VideoProcessor: @unchecked Sendable {
                 finishLock.withLock {
                     guard videoFinished && audioFinished && !resumedContinuation else { return }
                     resumedContinuation = true
-                    writer.finishWriting {
-                        if let err = writer.error {
+                    pipeline.writer.finishWriting {
+                        if let err = pipeline.writer.error {
                             continuation.resume(throwing: VideoError.processingFailed(err.localizedDescription))
                         } else {
                             continuation.resume()
@@ -228,21 +250,21 @@ final class VideoProcessor: @unchecked Sendable {
                 finishLock.withLock {
                     guard !resumedContinuation else { return }
                     resumedContinuation = true
-                    reader.cancelReading()
-                    writer.cancelWriting()
+                    pipeline.reader.cancelReading()
+                    pipeline.writer.cancelWriting()
                     continuation.resume(throwing: error)
                 }
             }
 
             // Video
-            videoInput.requestMediaDataWhenReady(on: videoQueue) {
-                while videoInput.isReadyForMoreMediaData {
+            pipeline.videoInput.requestMediaDataWhenReady(on: videoQueue) {
+                while pipeline.videoInput.isReadyForMoreMediaData {
                     if cancelled() {
                         abortWith(error: VideoError.cancelled)
                         return
                     }
-                    guard let sample = videoOutput.copyNextSampleBuffer() else {
-                        videoInput.markAsFinished()
+                    guard let sample = pipeline.videoOutput.copyNextSampleBuffer() else {
+                        pipeline.videoInput.markAsFinished()
                         videoFinished = true
                         finishIfReady()
                         return
@@ -267,21 +289,22 @@ final class VideoProcessor: @unchecked Sendable {
                         targetWidth: targetWidth,
                         targetHeight: targetHeight,
                         ciContext: ciContext,
-                        pool: pool
+                        pool: pipeline.pool
                     )
 
                     // Time offset so chunk starts at zero
                     let offsetPTS = CMTimeSubtract(pts, .from(seconds: startTime))
-                    pixelBufferAdaptor.append(processed, withPresentationTime: offsetPTS)
+                    pipeline.pixelBufferAdaptor.append(processed, withPresentationTime: offsetPTS)
                 }
             }
 
-            // Audio
-            if let audioOutput, let audioInput {
-                audioInput.requestMediaDataWhenReady(on: audioQueue) {
-                    while audioInput.isReadyForMoreMediaData {
-                        guard let sample = audioOutput.copyNextSampleBuffer() else {
-                            audioInput.markAsFinished()
+            // Audio — access audioInput/audioOutput only through pipeline so the closure
+            // captures only pipeline (@unchecked Sendable), not the bare non-Sendable locals.
+            if pipeline.audioInput != nil {
+                pipeline.audioInput?.requestMediaDataWhenReady(on: audioQueue) {
+                    while pipeline.audioInput?.isReadyForMoreMediaData == true {
+                        guard let sample = pipeline.audioOutput?.copyNextSampleBuffer() else {
+                            pipeline.audioInput?.markAsFinished()
                             audioFinished = true
                             finishIfReady()
                             return
@@ -303,12 +326,28 @@ final class VideoProcessor: @unchecked Sendable {
                             sampleBufferOut: &adjusted
                         )
                         if let adjusted {
-                            audioInput.append(adjusted)
+                            pipeline.audioInput?.append(adjusted)
                         }
                     }
                 }
             }
         }
+    }
+
+    // MARK: - ChunkPipeline
+
+    /// Bundles all non-Sendable AVFoundation pipeline objects into a single
+    /// @unchecked Sendable value so they can be safely captured in the
+    /// @Sendable closures passed to requestMediaDataWhenReady(on:using:).
+    private struct ChunkPipeline: @unchecked Sendable {
+        nonisolated(unsafe) let reader: AVAssetReader
+        nonisolated(unsafe) let writer: AVAssetWriter
+        nonisolated(unsafe) let videoInput: AVAssetWriterInput
+        nonisolated(unsafe) let videoOutput: AVAssetReaderTrackOutput
+        nonisolated(unsafe) let pixelBufferAdaptor: AVAssetWriterInputPixelBufferAdaptor
+        nonisolated(unsafe) let pool: CVPixelBufferPool?
+        nonisolated(unsafe) let audioInput: AVAssetWriterInput?
+        nonisolated(unsafe) let audioOutput: AVAssetReaderTrackOutput?
     }
 
     // MARK: - Frame Scaling & Watermarking

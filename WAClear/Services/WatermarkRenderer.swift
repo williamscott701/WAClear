@@ -94,6 +94,8 @@ final class WatermarkRenderer {
             )
             text.draw(in: rect, withAttributes: attrs)
         }
-        return image.ciImage ?? CIImage(cgImage: image.cgImage!)
+        if let ciImage = image.ciImage { return ciImage }
+        guard let cg = image.cgImage else { return nil }
+        return CIImage(cgImage: cg)
     }
 }
