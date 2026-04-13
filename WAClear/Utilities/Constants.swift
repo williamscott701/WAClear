@@ -18,6 +18,8 @@ enum Constants {
 
     enum StoreKit {
         static let monthlyProductID = "com.waclear.premium.monthly"
+        static let yearlyProductID  = "com.waclear.premium.yearly"
+        static let allProductIDs    = [monthlyProductID, yearlyProductID]
     }
 
     enum UI {

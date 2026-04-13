@@ -2,18 +2,25 @@ import Foundation
 import Combine
 import StoreKit
 
+// MARK: - SubscriptionPlan
+
+enum SubscriptionPlan: Equatable {
+    case monthly
+    case yearly
+}
+
 // MARK: - StoreManager
 //
 // Uses StoreKit 2 auto-renewable subscriptions.
-// The 3-day free trial is an introductory offer configured in App Store Connect
-// (and mirrored in Configuration.storekit for local testing).
+// Two plans: monthly (₹99/mo) and yearly (₹499/yr — ~57% savings).
+// Both plans include a 3-day free trial introductory offer.
 // Apple manages trial eligibility, billing dates, and renewals automatically.
 //
 // HOW TO TEST (no real charges):
 //   1. In Xcode: Product > Scheme > Edit Scheme > Run > Options
 //      Set "StoreKit Configuration" to Configuration.storekit
 //   2. Run on simulator — all purchases are simulated locally.
-//   3. Tap "Start Free Trial" or "Subscribe Now" to trigger the sandbox sheet.
+//   3. Tap "Start Free Trial" to trigger the sandbox sheet.
 //   4. Use Debug > StoreKit > Manage Transactions to inspect, refund, or expire subs.
 //   5. To test Restore: purchase, delete the app, reinstall, tap "Restore Purchases".
 
@@ -21,11 +28,11 @@ import StoreKit
 final class StoreManager: ObservableObject {
     @Published private(set) var isPremium = false
     @Published private(set) var isEligibleForTrial = false
-    @Published private(set) var product: Product?
+    @Published private(set) var monthlyProduct: Product?
+    @Published private(set) var yearlyProduct: Product?
     @Published private(set) var isLoading = false
     @Published var purchaseError: String?
 
-    /// Every user can always process videos. Non-premium users receive a watermark.
     var canProcess: Bool { true }
 
     private var transactionListenerTask: Task<Void, Never>?
@@ -44,8 +51,11 @@ final class StoreManager: ObservableObject {
         isLoading = true
         defer { isLoading = false }
         do {
-            let products = try await Product.products(for: [Constants.StoreKit.monthlyProductID])
-            product = products.first
+            let products = try await Product.products(for: Constants.StoreKit.allProductIDs)
+            for p in products {
+                if p.id == Constants.StoreKit.yearlyProductID  { yearlyProduct  = p }
+                if p.id == Constants.StoreKit.monthlyProductID { monthlyProduct = p }
+            }
             await updateTrialEligibility()
         } catch {
             purchaseError = "Could not load products: \(error.localizedDescription)"
@@ -53,16 +63,20 @@ final class StoreManager: ObservableObject {
     }
 
     private func updateTrialEligibility() async {
-        guard let sub = product?.subscription else {
+        // Check yearly first (the default/recommended plan), fall back to monthly
+        if let yearlySub = yearlyProduct?.subscription {
+            isEligibleForTrial = await yearlySub.isEligibleForIntroOffer
+        } else if let monthlySub = monthlyProduct?.subscription {
+            isEligibleForTrial = await monthlySub.isEligibleForIntroOffer
+        } else {
             isEligibleForTrial = false
-            return
         }
-        isEligibleForTrial = await sub.isEligibleForIntroOffer
     }
 
     // MARK: - Purchase
 
-    func purchase() async {
+    func purchase(plan: SubscriptionPlan) async {
+        let product = plan == .yearly ? yearlyProduct : monthlyProduct
         guard let product else {
             purchaseError = "Product not available. Please try again."
             return
@@ -110,7 +124,7 @@ final class StoreManager: ObservableObject {
         var foundPremium = false
         for await result in Transaction.currentEntitlements {
             if case .verified(let transaction) = result,
-               transaction.productID == Constants.StoreKit.monthlyProductID,
+               Constants.StoreKit.allProductIDs.contains(transaction.productID),
                transaction.revocationDate == nil {
                 foundPremium = true
                 await transaction.finish()

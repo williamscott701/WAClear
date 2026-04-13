@@ -44,13 +44,13 @@
           "adHocOffers" : [
 
           ],
-          "displayPrice" : "99.00",
+          "displayPrice" : "499.00",
           "familyShareable" : false,
           "groupNumber" : 1,
-          "internalID" : "monthly_premium",
+          "internalID" : "yearly_premium",
           "introductoryOffer" : {
             "displayPrice" : "0.00",
-            "internalID" : "free_trial_3_days",
+            "internalID" : "free_trial_3_days_yearly",
             "paymentMode" : "FreeTrial",
             "subscriptionPeriod" : "P3D",
             "type" : "introductory"
@@ -58,12 +58,44 @@
           "localizations" : [
             {
               "description" : "Crystal-clear WhatsApp status videos with no watermark",
-              "displayName" : "WAClear Premium",
+              "displayName" : "WAClear Premium Yearly",
               "locale" : "en_US"
             },
             {
               "description" : "वॉटरमार्क के बिना WhatsApp स्टेटस वीडियो",
-              "displayName" : "WAClear प्रीमियम",
+              "displayName" : "WAClear प्रीमियम वार्षिक",
+              "locale" : "hi"
+            }
+          ],
+          "productID" : "com.waclear.premium.yearly",
+          "recurringSubscriptionPeriod" : "P1Y",
+          "referenceName" : "Yearly Premium",
+          "type" : "RecurringSubscription"
+        },
+        {
+          "adHocOffers" : [
+
+          ],
+          "displayPrice" : "99.00",
+          "familyShareable" : false,
+          "groupNumber" : 2,
+          "internalID" : "monthly_premium",
+          "introductoryOffer" : {
+            "displayPrice" : "0.00",
+            "internalID" : "free_trial_3_days_monthly",
+            "paymentMode" : "FreeTrial",
+            "subscriptionPeriod" : "P3D",
+            "type" : "introductory"
+          },
+          "localizations" : [
+            {
+              "description" : "Crystal-clear WhatsApp status videos with no watermark",
+              "displayName" : "WAClear Premium Monthly",
+              "locale" : "en_US"
+            },
+            {
+              "description" : "वॉटरमार्क के बिना WhatsApp स्टेटस वीडियो",
+              "displayName" : "WAClear प्रीमियम मासिक",
               "locale" : "hi"
             }
           ],

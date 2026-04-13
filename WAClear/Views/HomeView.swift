@@ -4,7 +4,6 @@ import PhotosUI
 struct HomeView: View {
     @StateObject private var viewModel = HomeViewModel()
     @EnvironmentObject private var storeManager: StoreManager
-    @State private var showSubscription = false
 
     private let bgColor = Color(red: 0.04, green: 0.04, blue: 0.06)
     private let purple = Color(red: 0.58, green: 0.20, blue: 1.0)
@@ -42,10 +41,6 @@ struct HomeView: View {
                             .transition(.opacity)
                         }
 
-                        if !storeManager.isPremium {
-                            upgradeBanner
-                        }
-
                         Spacer(minLength: 40)
                     }
                     .padding(.top, viewModel.videoPreview != nil ? 20 : 60)
@@ -65,9 +60,6 @@ struct HomeView: View {
             }
             .sheet(isPresented: $viewModel.showSettings) {
                 SettingsView()
-            }
-            .sheet(isPresented: $showSubscription) {
-                SubscriptionView()
             }
             .onAppear { Task { await storeManager.checkCurrentEntitlements() } }
             .toolbar {
@@ -431,43 +423,6 @@ struct HomeView: View {
             .frame(width: 1, height: 44)
     }
 
-    // MARK: - Upgrade Banner (shown to non-premium users)
-
-    private var upgradeBanner: some View {
-        Button { showSubscription = true } label: {
-            HStack(spacing: 12) {
-                Image(systemName: "crown.fill")
-                    .font(.system(size: 18, weight: .semibold))
-                    .foregroundStyle(purple)
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(storeManager.isEligibleForTrial ? "Try Premium Free for 3 Days" : "Go Premium")
-                        .font(.system(size: 14, weight: .bold))
-                        .foregroundStyle(.white)
-                    Text(storeManager.isEligibleForTrial
-                         ? "No watermark · Unlimited conversions"
-                         : "Remove watermark · Unlimited conversions")
-                        .font(.system(size: 12))
-                        .foregroundStyle(.white.opacity(0.65))
-                }
-                Spacer()
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.4))
-            }
-            .padding(.horizontal, 20)
-            .padding(.vertical, 16)
-            .background(.ultraThinMaterial)
-            .clipShape(RoundedRectangle(cornerRadius: Constants.UI.cornerRadius))
-            .overlay(
-                RoundedRectangle(cornerRadius: Constants.UI.cornerRadius)
-                    .stroke(
-                        LinearGradient(colors: [purple, blue], startPoint: .leading, endPoint: .trailing),
-                        lineWidth: 1
-                    )
-            )
-            .padding(.horizontal, 24)
-        }
-    }
 }
 
 // MARK: - ShimmerBar
