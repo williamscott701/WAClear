@@ -18,11 +18,10 @@ struct SubscriptionView: View {
 
     private let features: [(String, String)] = [
         ("sparkles",             "Crystal clear videos on WhatsApp Status"),
-        ("eye.fill",             "Your viewers see exactly what you recorded"),
         ("video.badge.checkmark","No watermark — clean videos every time"),
         ("scissors",             "Auto-split into WhatsApp Status clips"),
         ("bolt.fill",            "Unlimited conversions, on-device & private"),
-        ("infinity",             "Post as many statuses as you want")
+        ("lock.shield.fill",     "100% private — nothing leaves your phone")
     ]
 
     var body: some View {
@@ -107,7 +106,7 @@ struct SubscriptionView: View {
 
             Text(storeManager.isEligibleForTrial
                  ? "Stop WhatsApp from blurring your videos.\nNo charge for the first 3 days."
-                 : "Stop WhatsApp from blurring your videos.\nPost every Status in full quality.")
+                 : "Stop WhatsApp from blurring your videos.\nCancel anytime.")
                 .font(.system(size: 15))
                 .multilineTextAlignment(.center)
                 .foregroundStyle(.white.opacity(0.6))
