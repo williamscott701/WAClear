@@ -8,6 +8,9 @@ struct SubscriptionView: View {
 
     @EnvironmentObject private var storeManager: StoreManager
     @Environment(\.dismiss) private var dismiss
+    #if DEBUG
+    @AppStorage("debugBypassPaywall") private var debugBypassPaywall = false
+    #endif
 
     @State private var selectedPlan: SubscriptionPlan = .yearly
 
@@ -42,7 +45,26 @@ struct SubscriptionView: View {
                     .padding(.horizontal, 24)
                     .padding(.top, 20)
                 } else {
+                    #if DEBUG
+                    HStack {
+                        Button {
+                            debugBypassPaywall = true
+                        } label: {
+                            Label("Skip (Debug)", systemImage: "ladybug.fill")
+                                .font(.system(size: 12, weight: .semibold))
+                                .foregroundStyle(.orange)
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 6)
+                                .background(Color.orange.opacity(0.15))
+                                .clipShape(Capsule())
+                        }
+                        Spacer()
+                    }
+                    .padding(.horizontal, 24)
+                    .padding(.top, 20)
+                    #else
                     Color.clear.frame(height: 52)
+                    #endif
                 }
 
                 ScrollView {
