@@ -3,6 +3,9 @@ import SwiftUI
 struct SettingsView: View {
     @EnvironmentObject private var storeManager: StoreManager
     @Environment(\.dismiss) private var dismiss
+    #if DEBUG
+    @AppStorage("debugBypassPaywall") private var debugBypassPaywall = false
+    #endif
 
     private let bgColor = Color(red: 0.04, green: 0.04, blue: 0.06)
     private let appVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0"
@@ -92,6 +95,23 @@ struct SettingsView: View {
                             .foregroundStyle(.white.opacity(0.5))
                     }
                     .listRowBackground(Color.white.opacity(0.07))
+                    #if DEBUG
+                    Section {
+                        Toggle(isOn: $debugBypassPaywall) {
+                            HStack {
+                                Image(systemName: "ladybug.fill")
+                                    .foregroundStyle(.orange)
+                                Text("Bypass Paywall")
+                                    .foregroundStyle(.white)
+                            }
+                        }
+                        .tint(.orange)
+                    } header: {
+                        Text("Debug")
+                            .foregroundStyle(.white.opacity(0.5))
+                    }
+                    .listRowBackground(Color.white.opacity(0.07))
+                    #endif
                 }
                 .scrollContentBackground(.hidden)
             }
