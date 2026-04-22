@@ -12,6 +12,7 @@ struct SubscriptionView: View {
     @AppStorage("debugBypassPaywall") private var debugBypassPaywall = false
 
     @State private var selectedPlan: SubscriptionPlan = .yearly
+    @State private var devTapCount = 0
 
     private let bgColor = Color(red: 0.04, green: 0.04, blue: 0.06)
     private let purple  = Color(red: 0.58, green: 0.20, blue: 1.0)
@@ -44,8 +45,8 @@ struct SubscriptionView: View {
                     .padding(.horizontal, 24)
                     .padding(.top, 20)
                 } else {
-                    if devModeUnlocked {
-                        HStack {
+                    HStack {
+                        if devModeUnlocked {
                             Button {
                                 debugBypassPaywall = true
                             } label: {
@@ -57,13 +58,22 @@ struct SubscriptionView: View {
                                     .background(Color.orange.opacity(0.15))
                                     .clipShape(Capsule())
                             }
-                            Spacer()
+                        } else {
+                            // Hidden tap target — 7 taps unlocks developer mode
+                            Color.clear
+                                .frame(width: 60, height: 32)
+                                .contentShape(Rectangle())
+                                .onTapGesture {
+                                    devTapCount += 1
+                                    if devTapCount >= 7 {
+                                        devModeUnlocked = true
+                                    }
+                                }
                         }
-                        .padding(.horizontal, 24)
-                        .padding(.top, 20)
-                    } else {
-                        Color.clear.frame(height: 52)
+                        Spacer()
                     }
+                    .padding(.horizontal, 24)
+                    .padding(.top, 20)
                 }
 
                 ScrollView {
