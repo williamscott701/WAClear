@@ -1,11 +1,9 @@
 import SwiftUI
 
 struct ContentView: View {
-    @AppStorage("hasSeenOnboarding") private var hasSeenOnboarding = false
-    @EnvironmentObject private var storeManager: StoreManager
-    #if DEBUG
+    @AppStorage("hasSeenOnboarding")  private var hasSeenOnboarding  = false
     @AppStorage("debugBypassPaywall") private var debugBypassPaywall = false
-    #endif
+    @EnvironmentObject private var storeManager: StoreManager
 
     var body: some View {
         HomeView()
@@ -16,15 +14,9 @@ struct ContentView: View {
             )) {
                 OnboardingView(hasSeenOnboarding: $hasSeenOnboarding)
             }
-            // 2. Hard paywall — shown after onboarding, cannot be dismissed without subscribing
+            // 2. Hard paywall — bypassed when developer mode is active
             .fullScreenCover(isPresented: Binding(
-                get: {
-                    #if DEBUG
-                    return hasSeenOnboarding && !storeManager.isPremium && !debugBypassPaywall
-                    #else
-                    return hasSeenOnboarding && !storeManager.isPremium
-                    #endif
-                },
+                get: { hasSeenOnboarding && !storeManager.isPremium && !debugBypassPaywall },
                 set: { _ in }
             )) {
                 SubscriptionView(allowDismiss: false)
